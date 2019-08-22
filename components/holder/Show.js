@@ -6,8 +6,6 @@ import { Card, List, ListItem, SocialIcon } from 'react-native-elements';
 import { Actions } from 'react-native-router-flux';
 import Spinner from '../Spinner';
 import { retrieve, reset } from '../../actions/holder/show';
-import { del, loading, error } from '../../actions/holder/delete';
-import { list } from '../../actions/holder/list';
 import { Confirm } from '../Confirm';
 import { delayRefresh } from '../../utils/helpers';
 
@@ -59,35 +57,9 @@ class Show extends Component {
     );
   }
 
-  actionButtons(id) {
-    return (
-        <View style={styles.actionStyle}>
-          <SocialIcon
-              iconSize={34}
-              type='plus-circle'
-              iconColor='#3faab4'
-              onPress={() => Actions.holderCreate()}
-          />
-          <SocialIcon
-              iconSize={34}
-              type='edit'
-              iconColor='#3faab4'
-              onPress={() => Actions.holderUpdate({id})}
-          />
-          <SocialIcon
-              iconSize={34}
-              type='minus-circle'
-              iconColor='#3faab4'
-              onPress={() => this.remove()}
-          />
-        </View>
-    );
-  }
-
   render() {
 
     if (this.props.loading) return <Spinner size="large"/>;
-    if (this.props.deleted) return Actions.pop();
 
     const item = this.props.retrieved;
 
@@ -113,18 +85,8 @@ class Show extends Component {
               </List>
             </Card>
             }
-            {this.props.deleteLoading && <View style={viewStyle}><Spinner size='large'/></View>}
-            {this.props.deleteError && <View style={viewStyle}><Text style={textStyleAlert}>{this.props.deleteError}</Text></View>}
             {this.props.error && <View style={viewStyle}><Text style={textStyleAlert}>{this.props.error}</Text></View>}
           </ScrollView>
-          {item && this.actionButtons(item['@id'])}
-          <Confirm
-              visible={this.state.showModal}
-              onAccept={() => this.onAccept()}
-              onDecline={() => this.onDecline()}
-          >
-            Are you sure you want to delete this?
-          </Confirm>
         </View>
     );
   }
@@ -135,17 +97,12 @@ const mapStateToProps = (state) => {
     error: state.holder.show.error,
     loading: state.holder.show.loading,
     retrieved: state.holder.show.retrieved,
-    deleteError: state.holder.del.error,
-    deleteLoading: state.holder.del.loading,
-    deleted: state.holder.del.deleted,
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
     retrieve: id => dispatch(retrieve(id)),
-    list: page => dispatch(list(page)),
-    del: item => dispatch(del(item)),
     reset: () => dispatch(reset()),
   };
 };
@@ -177,14 +134,8 @@ Show.propTypes = {
   retrieved: PropTypes.object,
   retrieve: PropTypes.func.isRequired,
   reset: PropTypes.func.isRequired,
-  deleteError: PropTypes.string,
-  deleteLoading: PropTypes.bool.isRequired,
-  deleted: PropTypes.object,
-  del: PropTypes.func.isRequired,
-  showModal:PropTypes.bool,
   refresh:PropTypes.number,
   id:PropTypes.string,
-  list: PropTypes.func.isRequired
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Show);
