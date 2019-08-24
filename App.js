@@ -18,15 +18,16 @@ global.URLSearchParams = URLSearchParams;
 import RNEventSource from 'react-native-event-source';
 global.EventSource = RNEventSource;
 
-import holder from './reducers/holder';
+import waitingLine from './reducers/waitingLine';
 import Router from './Router';
 
 export default class App extends Component {
   render() {
     const store = createStore(combineReducers({
-      holder,
+        waitingLine,
       form
     }), {}, applyMiddleware(thunk));
+
     return (
         <Provider store={store}>
           <View style={{flex: 1}}>

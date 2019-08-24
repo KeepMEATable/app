@@ -3,50 +3,14 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ScrollView, View, Text } from 'react-native';
 import { Card, List, ListItem } from 'react-native-elements';
-import { Actions } from 'react-native-router-flux';
 import Spinner from '../Spinner';
-import { retrieve, reset } from '../../actions/holder/show';
-import { delayRefresh } from '../../utils/helpers';
-import Fingerprint2 from 'fingerprintjs2';
+import { retrieve, getUid } from '../../actions/waitingLine/show';
 
 class Show extends Component {
 
-  state = { showModal: false, uid: '' };
-
-  componentWillMount() {
-      Fingerprint2.get((components) => {
-          this.setState({uid: Fingerprint2.x64hash128(components.map((pair) => pair.value).join(), 31)})
-      });
-  }
-
   componentDidMount() {
-    this.props.retrieve(this.props.id);
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.refresh !== this.props.refresh) {
-      this.props.list();
-    }
-  }
-
-  componentWillUnmount() {
-    this.props.reset();
-  }
-
-  remove() {
-    this.setState({showModal: !this.state.showModal});
-  }
-
-  onAccept() {
-    const {del, retrieved} = this.props;
-    del(retrieved);
-    this.setState({showModal: false});
-    Actions.pop();
-    delayRefresh();
-  }
-
-  onDecline() {
-    this.setState({showModal: false});
+    // this.props.retrieve(this.props.id);
+    this.props.getUid();
   }
 
   static renderRow(title, value) {
@@ -73,8 +37,8 @@ class Show extends Component {
 
     return (
         <View style={ {flex: 1} }>
-            <Text>{this.state.uid}</Text>
           <ScrollView>
+                <Text>{this.props.uid}</Text>
             {item &&
             <Card title="Holder">
               <List title="title">
@@ -101,16 +65,17 @@ class Show extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    error: state.holder.show.error,
-    loading: state.holder.show.loading,
-    retrieved: state.holder.show.retrieved,
+    error: state.waitingLine.show.error,
+    loading: state.waitingLine.show.loading,
+    retrieved: state.waitingLine.show.retrieved,
+    uid: state.waitingLine.show.init,
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
+    getUid: () => dispatch(getUid()),
     retrieve: id => dispatch(retrieve(id)),
-    reset: () => dispatch(reset()),
   };
 };
 
@@ -140,9 +105,8 @@ Show.propTypes = {
   loading: PropTypes.bool.isRequired,
   retrieved: PropTypes.object,
   retrieve: PropTypes.func.isRequired,
-  reset: PropTypes.func.isRequired,
-  refresh:PropTypes.number,
-  id:PropTypes.string,
+  uid: PropTypes.string,
+  getUid: PropTypes.func.isRequired,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Show);

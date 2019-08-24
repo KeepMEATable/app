@@ -1,13 +1,13 @@
 import React from 'react';
 import { Router, Stack } from 'react-native-router-flux';
 
-import HolderRoutes from './routes/holder';
+import WaitingLineRoutes from './routes/waitingLine';
 
 const RouterComponent = () => {
     return (
         <Router>
             <Stack key="root">
-                {HolderRoutes}
+                {WaitingLineRoutes}
             </Stack>
         </Router>
     );
