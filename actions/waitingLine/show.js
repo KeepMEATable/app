@@ -1,8 +1,10 @@
 import {
   fetch,
   normalize,
+  storeData, retrieveData, removeData
 } from '../../utils/dataAccess';
 import Fingerprint2 from "fingerprintjs2";
+import {ENTRYPOINT} from "../../config/entrypoint";
 
 export function error(error) {
   return { type: 'WAITINGLINE_SHOW_ERROR', error };
@@ -16,41 +18,108 @@ export function success(retrieved) {
   return { type: 'WAITINGLINE_SHOW_SUCCESS', retrieved };
 }
 
-export function icu(uid) {
-  return { type: 'APP_INIT_UID', uid};
+export function authenticated(authenticated) {
+  return { type: 'APP_AUTHENTICATED', authenticated };
 }
 
-export function getUid() {
-  return dispatch => {
-    dispatch(loading(true));
+export function logout() {
+  removeData('authenticated');
+  return { type: 'APP_LOGOUT' };
+}
 
-    return Fingerprint2.get((components) => {
-      dispatch(icu(Fingerprint2.x64hash128(components.map((pair) => pair.value).join(), 31)));
+export function icu(uid) {
+  return { type: 'APP_IDENTIFY', uid};
+}
+
+export function init() {
+  return async dispatch => {
+    dispatch(loading(true));
+    await dispatch(authenticate());
+    await dispatch(identify());
+    await dispatch(getWaitingLine());
+    dispatch(loading(false));
+  }
+}
+
+export function authenticate(force = false) {
+  return async (dispatch, getState) => {
+    let {show: {authenticated: token}} = getState().waitingLine;
+
+    if (token === null) {
+      token = await retrieveData('authenticated');
+    }
+
+    if (!force && token !== null) {
+      return dispatch(authenticated(token));
+    }
+
+    return fetch(new URL('/login_check', ENTRYPOINT), {
+      method: 'POST',
+      body: JSON.stringify({
+        username: 'TheCustomer', // todo put this in env var.
+        password: '!ChangeMe!'
+      })
+    }).then(response =>
+        response
+            .json()
+            .then(authenticated => ({authenticated}))
+    ).then(result => {
+      storeData('authenticated', result.authenticated);
+      return dispatch(authenticated(result.authenticated));
+    }).catch(e => {
       dispatch(loading(false));
+      dispatch(error(e.message));
     });
   }
 }
 
-export function retrieve(id) {
-  return dispatch => {
+export function identify() {
+  return async dispatch => {
     dispatch(loading(true));
 
-    return fetch(id)
+    const uid = await retrieveData('uid');
+
+    if (uid !== null) {
+      return dispatch(icu(uid));
+    }
+
+    return Fingerprint2.get((components) => {
+      const uid = Fingerprint2.x64hash128(components.map((pair) => pair.value).join(), 31);
+      storeData('uid', uid);
+
+      return dispatch(icu(uid));
+    });
+  }
+}
+
+export function getWaitingLine(noLoop = false) {
+  return (dispatch, getState) => {
+    let {show: {identity, authenticated: {token}}} = getState().waitingLine;
+
+    let headers = new Headers();
+    headers.set('Authorization', `Bearer ${token}`);
+
+    return fetch(`/waiting_lines/${identity}`, {headers})
       .then(response =>
         response
           .json()
-          .then(retrieved => ({ retrieved }))
+          .then(retrieved => ({retrieved}))
       )
-      .then(({ retrieved }) => {
+      .then(({retrieved}) => {
         retrieved = normalize(retrieved);
 
         dispatch(loading(false));
         dispatch(success(retrieved));
       })
-      .catch(e => {
+      .catch(async (e) => {
         // post uid before retry
-        dispatch(loading(false));
-        dispatch(error(e.message));
+        if (!noLoop) {
+          dispatch(logout());
+          await dispatch(authenticate(true));
+          await dispatch(getWaitingLine(true));
+        }
+
+        dispatch(error('cannot retrieve data.'));
       });
-  };
+  }
 }

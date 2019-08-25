@@ -1,15 +1,41 @@
 import { ENTRYPOINT } from '../config/entrypoint';
 import { SubmissionError } from 'redux-form';
+import {AsyncStorage} from 'react-native';
 import get from 'lodash/get';
 import has from 'lodash/has';
 import mapValues from 'lodash/mapValues';
 
 const MIME_TYPE = 'application/ld+json';
 
+export async function storeData(key, value) {
+  try {
+    await AsyncStorage.setItem(`@kmat:${key}`, value);
+  } catch (error) {
+    // Error saving data
+  }
+}
+
+export async function removeData(key) {
+  await AsyncStorage.removeItem(`@kmat:${key}`);
+}
+
+export async function retrieveData(key)
+{
+  try {
+    const item = await AsyncStorage.getItem(`@kmat:${key}`);
+    try {
+      return JSON.parse(item);
+    } catch (error) {
+      return item;
+    }
+  } catch (error) {
+    throw Error(error);
+  }
+}
+
 export function fetch(id, options = {}) {
   if ('undefined' === typeof options.headers) options.headers = new Headers();
-  if (null === options.headers.get('Accept'))
-    options.headers.set('Accept', MIME_TYPE);
+  if (null === options.headers.get('Accept')) options.headers.set('Accept', MIME_TYPE);
 
   if (
     'undefined' !== options.body &&
