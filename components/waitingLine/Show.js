@@ -2,9 +2,11 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ScrollView, View, Text } from 'react-native';
-import { Card } from 'react-native-elements';
+import { Card, Button } from 'react-native-elements';
 import Spinner from '../Spinner';
 import { init } from '../../actions/waitingLine/show';
+import QRCode from 'react-native-qrcode-svg';
+import CountDown from 'react-native-countdown-component';
 
 class Show extends Component {
 
@@ -20,16 +22,46 @@ class Show extends Component {
 
     const {viewStyle, textStyleAlert } = styles;
 
+    if (item && item.ready) return <Card><QRCode value="{item['customerId']}" size={300} /></Card>;
+
+    if (item && item.waiting) return (
+      <View style={ {flex: 1} }>
+        <Card>
+          <Text>Waiting for a table...</Text>
+        </Card>
+        <Card>
+          <CountDown
+            until={10}
+            digitTxtStyle={{color: '#56a7f6'}}
+            digitStyle={{backgroundColor: '#FFF', borderWidth: 2, borderColor: '#56a7f6'}}
+            separatorStyle={{color: '#56a7f6'}}
+            timeToShow={['M', 'S']}
+            timeLabels={{m: null, s: null}}
+            onFinish={() => alert('Finish your beer! We should contact you soon :)')}
+            onPress={() => alert('We are almost there... ')}
+            size={30}
+          />
+        </Card>
+        <Card>
+          <Button title="cancel" raised={true}/>
+        </Card>
+      </View>
+  );
+
+    if (item && item.started && !item.waiting && !item.ready) return <Card><QRCode value="{item['customerId']}" size={300} /></Card>;
+
     return (
         <View style={ {flex: 1} }>
           <ScrollView>
             {item &&
-                <Card>
-                    <Text>{item['customerId']}</Text>
-                    <Text>{item['ready'] ? 'ready' : 'not Ready'}</Text>
-                    <Text>{item['started'] ? 'started' : 'not started'}</Text>
-                    <Text>{item['waiting'] ? 'waiting' : 'not waiting'}</Text>
-                </Card>
+                <React.Fragment>
+                  <Card>
+                      <Text>{item['customerId']}</Text>
+                      <Text>{item['ready'] ? 'ready' : 'not Ready'}</Text>
+                      <Text>{item['started'] ? 'started' : 'not started'}</Text>
+                      <Text>{item['waiting'] ? 'waiting' : 'not waiting'}</Text>
+                  </Card>
+                </React.Fragment>
             }
             {this.props.error && <View style={viewStyle}><Text style={textStyleAlert}>{this.props.error}</Text></View>}
           </ScrollView>
@@ -63,15 +95,6 @@ const styles = {
     flexDirection: 'row',
     borderColor: '#ddd',
     position: 'relative',
-  },
-  textStyleAlert: {
-    color: 'red',
-    textAlign: 'center',
-  },
-  actionStyle: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-    alignContent: 'center',
   }
 };
 
