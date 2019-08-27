@@ -21,7 +21,12 @@ class Show extends Component {
   _renderItem ({item, index}) {
     return (
         <View style={{ height: viewportHeight }}>
+          <Card>
             <Text style={styles.title}>{ item.title }</Text>
+          </Card>
+          <Card>
+            <Button title="Start immediately" raised={true}/>
+          </Card>
         </View>
     );
   }
@@ -34,7 +39,16 @@ class Show extends Component {
 
     const {viewStyle, textStyleAlert } = styles;
 
-    if (item && item.ready) return <Card><QRCode value="{item['customerId']}" size={300} /></Card>;
+    if (item && item.ready) return (
+      <View style={ {flex: 1} }>
+        <Card>
+          <Text>Diner is ready!</Text>
+        </Card>
+        <Card>
+          <Button title="I am coming!" raised={true}/>
+        </Card>
+      </View>
+    );
 
     if (item && item.waiting) return (
       <View style={ {flex: 1} }>
