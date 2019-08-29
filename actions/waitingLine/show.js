@@ -41,6 +41,36 @@ export function init() {
   }
 }
 
+export function updateState({customerId}, newState, noLoop) {
+  return async dispatch => {
+    fetch(new URL(`/waiting_lines/${customerId}/state`, ENTRYPOINT), {
+      method: 'PATCH',
+      body: JSON.stringify({
+        state: newState
+      })
+    }).then(response =>
+      response
+        .json()
+        .then(retrieved => ({retrieved}))
+    )
+    .then(({retrieved}) => {
+      retrieved = normalize(retrieved);
+
+      dispatch(loading(false));
+      dispatch(success(retrieved));
+    })
+    .catch(async (e) => {
+      if (!noLoop) {
+        dispatch(logout());
+        await dispatch(authenticate(true));
+        await dispatch(updateState({customerId}, newState, true));
+      }
+
+      dispatch(error('cannot update the state.'));
+    });
+  }
+}
+
 export function authenticate(force = false) {
   return async (dispatch, getState) => {
     let {show: {authenticated: token}} = getState().waitingLine;
@@ -64,7 +94,7 @@ export function authenticate(force = false) {
             .json()
             .then(authenticated => ({authenticated}))
     ).then(result => {
-      storeData('authenticated', result.authenticated);
+      storeData('authenticated', JSON.stringify(result.authenticated));
       return dispatch(authenticated(result.authenticated));
     }).catch(e => {
       dispatch(loading(false));
@@ -94,12 +124,9 @@ export function identify() {
 
 export function getWaitingLine(noLoop = false) {
   return (dispatch, getState) => {
-    let {show: {identity, authenticated: {token}}} = getState().waitingLine;
+    let {show: {identity}} = getState().waitingLine;
 
-    let headers = new Headers();
-    headers.set('Authorization', `Bearer ${token}`);
-
-    return fetch(`/waiting_lines/${identity}`, {headers})
+    return fetch(`/waiting_lines/${identity}`)
       .then(response =>
         response
           .json()

@@ -11,7 +11,7 @@ export async function storeData(key, value) {
   try {
     await AsyncStorage.setItem(`@kmat:${key}`, value);
   } catch (error) {
-    // Error saving data
+    throw Error(error);
   }
 }
 
@@ -33,9 +33,15 @@ export async function retrieveData(key)
   }
 }
 
-export function fetch(id, options = {}) {
+export async function fetch(id, options = {}) {
   if ('undefined' === typeof options.headers) options.headers = new Headers();
   if (null === options.headers.get('Accept')) options.headers.set('Accept', MIME_TYPE);
+
+  const authenticated = await retrieveData('authenticated');
+
+  if (authenticated) {
+    options.headers.set('Authorization', `Bearer ${authenticated.token}`);
+  }
 
   if (
     'undefined' !== options.body &&

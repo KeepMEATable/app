@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ScrollView, View, Text, Dimensions } from 'react-native';
+import { ScrollView, View, Text, Dimensions, Alert } from 'react-native';
 import { Card, Button } from 'react-native-elements';
 import Spinner from '../Spinner';
-import { init } from '../../actions/waitingLine/show';
+import { init, updateState } from '../../actions/waitingLine/show';
 
 import QRCode from 'react-native-qrcode-svg';
 import CountDown from 'react-native-countdown-component';
-import Carousel, { Pagination } from 'react-native-snap-carousel';
+import Carousel from 'react-native-snap-carousel';
 
 const { width: viewportWidth, height: viewportHeight } = Dimensions.get('window');
 
@@ -17,6 +17,28 @@ class Show extends Component {
   componentDidMount() {
     this.props.init();
   }
+
+  cancel = () => {
+    Alert.alert(
+      'get out the line',
+      'Are you sure you want to cancel?',
+      [
+          {text: 'Oh, no.', style: 'cancel'},
+          {text: 'Yes, the delicate smell of chips got me...', onPress: () => this.props.updateState(this.props.retrieved, 'reset')}
+      ]
+    );
+  };
+
+  reset = () => {
+    Alert.alert(
+      'Thank you',
+      'Hope you liked it :)',
+      [
+        {text: 'Meh.', style: 'cancel', onPress: () => this.props.updateState(this.props.retrieved, 'reset')},
+        {text: 'Yes, This app is delicately balanced :)', onPress: () => this.props.updateState(this.props.retrieved, 'reset')}
+      ]
+    );
+  };
 
   _renderItem ({item, index}) {
     return (
@@ -45,7 +67,7 @@ class Show extends Component {
           <Text>Diner is ready!</Text>
         </Card>
         <Card>
-          <Button title="I am coming!" raised={true}/>
+          <Button onPress={this.reset} title="I am coming!" raised={true}/>
         </Card>
       </View>
     );
@@ -69,7 +91,7 @@ class Show extends Component {
           />
         </Card>
         <Card>
-          <Button title="cancel" raised={true}/>
+          <Button onPress={this.cancel} title="cancel" raised={true}/>
         </Card>
       </View>
     );
@@ -127,6 +149,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = dispatch => {
   return {
     init: () => dispatch(init()),
+    updateState: (identity, newState) => dispatch(updateState(identity, newState)),
   };
 };
 
@@ -148,6 +171,7 @@ Show.propTypes = {
   retrieved: PropTypes.object,
   authenticated: PropTypes.object,
   init: PropTypes.func.isRequired,
+  updateState: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
 };
 
