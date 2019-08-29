@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { ScrollView, View, Text, Dimensions, Alert } from 'react-native';
 import { Card, Button } from 'react-native-elements';
 import Spinner from '../Spinner';
-import { init, updateState } from '../../actions/waitingLine/show';
+import { init, updateStatus } from '../../actions/waitingLine/show';
 
 import QRCode from 'react-native-qrcode-svg';
 import CountDown from 'react-native-countdown-component';
@@ -24,7 +24,7 @@ class Show extends Component {
       'Are you sure you want to cancel?',
       [
           {text: 'Oh, no.', style: 'cancel'},
-          {text: 'Yes, the delicate smell of chips got me...', onPress: () => this.props.updateState(this.props.retrieved, 'reset')}
+          {text: 'Yes, the delicate smell of chips got me...', onPress: () => this.props.updateStatus('reset')}
       ]
     );
   };
@@ -34,8 +34,8 @@ class Show extends Component {
       'Thank you',
       'Hope you liked it :)',
       [
-        {text: 'Meh.', style: 'cancel', onPress: () => this.props.updateState(this.props.retrieved, 'reset')},
-        {text: 'Yes, This app is delicately balanced :)', onPress: () => this.props.updateState(this.props.retrieved, 'reset')}
+        {text: 'Meh.', style: 'cancel', onPress: () => this.props.updateStatus('reset')},
+        {text: 'Yes, This app is delicately balanced :)', onPress: () => this.props.updateStatus('reset')}
       ]
     );
   };
@@ -90,7 +90,8 @@ class Show extends Component {
             size={30}
           />
         </Card>
-        <Card>
+        <Card> 
+
           <Button onPress={this.cancel} title="cancel" raised={true}/>
         </Card>
       </View>
@@ -149,7 +150,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = dispatch => {
   return {
     init: () => dispatch(init()),
-    updateState: (identity, newState) => dispatch(updateState(identity, newState)),
+    updateStatus: (newStatus) => dispatch(updateStatus(newStatus)),
   };
 };
 
@@ -171,7 +172,7 @@ Show.propTypes = {
   retrieved: PropTypes.object,
   authenticated: PropTypes.object,
   init: PropTypes.func.isRequired,
-  updateState: PropTypes.func.isRequired,
+  updateStatus: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
 };
 
