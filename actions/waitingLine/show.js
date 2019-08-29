@@ -34,7 +34,7 @@ export function icu(uid) {
 export function init() {
   return async dispatch => {
     dispatch(loading(true));
-    await dispatch(authenticate());
+    await dispatch(authenticate(true));
     await dispatch(identify());
     await dispatch(getWaitingLine());
     dispatch(loading(false));
@@ -96,9 +96,9 @@ export function authenticate(force = false) {
         password: '!ChangeMe!'
       })
     }).then(response =>
-        response
-            .json()
-            .then(authenticated => ({authenticated}))
+      response
+        .json()
+        .then(authenticated => ({authenticated}))
     ).then(result => {
       storeData('authenticated', JSON.stringify(result.authenticated));
       return dispatch(authenticated(result.authenticated));
@@ -149,6 +149,14 @@ export function getWaitingLine(noLoop = false) {
       })
       .catch(async (e) => {
         // post uid before retry
+        fetch(new URL('/waiting_lines', ENTRYPOINT), {
+          headers,
+          method: 'POST',
+          body: JSON.stringify({
+            customerId: identity
+          })
+        });
+
         if (!noLoop) {
           dispatch(logout());
           await dispatch(authenticate(true));

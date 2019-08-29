@@ -10,13 +10,13 @@ import QRCode from 'react-native-qrcode-svg';
 import CountDown from 'react-native-countdown-component';
 import Carousel from 'react-native-snap-carousel';
 
-const { width: viewportWidth, height: viewportHeight } = Dimensions.get('window');
+const { width: viewportWidth } = Dimensions.get('window');
 
 class Show extends Component {
 
-  componentDidMount() {
+  init = () => {
     this.props.init();
-  }
+  };
 
   cancel = () => {
     Alert.alert(
@@ -42,14 +42,11 @@ class Show extends Component {
 
   _renderItem ({item, index}) {
     return (
-        <View style={{ height: viewportHeight }}>
+      <ScrollView>
           <Card>
             <Text style={styles.title}>{ item.title }</Text>
           </Card>
-          <Card>
-            <Button title="Start immediately" raised={true}/>
-          </Card>
-        </View>
+      </ScrollView>
     );
   }
 
@@ -90,7 +87,7 @@ class Show extends Component {
             size={30}
           />
         </Card>
-        <Card> 
+        <Card>
 
           <Button onPress={this.cancel} title="cancel" raised={true}/>
         </Card>
@@ -99,37 +96,34 @@ class Show extends Component {
 
     if (item && item.started && !item.waiting && !item.ready) return <Card><QRCode value="{item['customerId']}" size={300} /></Card>;
 
-    if (item && !item.started && !item.waiting && !item.ready) return (
-      <Carousel
-        data={[
-            {title: "It prevent you from waiting in a queue, and will warn you at the right time. Waiting for a table at a restaurant... It's simple and works in a few steps."},
-            {title: "Present your QrCode."},
-            {title: "Wait for your turn. The application detects that the QrCode has been flashed and redirect you in the waiting room. You can do anything you want until then (shopping, grab a couple of beers, run a marathon, etc) :)"},
-            {title: "Changed your mind? Nothing to worry, you can always cancel and leave the waiting room."},
-            {title: "It's your turn? The application will receive a signal, so as you ;)"},
-        ]}
-        renderItem={this._renderItem}
-        sliderWidth={viewportWidth}
-        itemWidth={viewportWidth}
-        slideStyle={{ width: viewportWidth }}
-        inactiveSlideOpacity={1}
-        inactiveSlideScale={1}
-      />
+    if (!item) return (
+      <View style={{ flex: 0.98 }}>
+        <Carousel
+            data={[
+                {title: "It prevent you from waiting in a queue, and will warn you at the right time. Waiting for a table at a restaurant... It's simple and works in a few steps."},
+                {title: "Present your QrCode."},
+                {title: "Wait for your turn. The application detects that the QrCode has been flashed and redirect you in the waiting room. You can do anything you want until then (shopping, grab a couple of beers, run a marathon, etc) :)"},
+                {title: "Changed your mind? Nothing to worry, you can always cancel and leave the waiting room."},
+                {title: "It's your turn? The application will receive a signal, so as you ;)"},
+            ]}
+            renderItem={this._renderItem}
+            sliderWidth={viewportWidth}
+            itemWidth={viewportWidth}
+            slideStyle={{ width: viewportWidth }}
+            inactiveSlideOpacity={1}
+            inactiveSlideScale={1}
+          />
+        <View>
+          <Card>
+            <Button onPress={this.init}  title="Start immediately" raised={true}/>
+          </Card>
+        </View>
+      </View>
     );
 
     return (
       <View style={ {flex: 1} }>
         <ScrollView>
-          {item &&
-            <React.Fragment>
-              <Card>
-                <Text>{item['customerId']}</Text>
-                <Text>{item['ready'] ? 'ready' : 'not Ready'}</Text>
-                <Text>{item['started'] ? 'started' : 'not started'}</Text>
-                <Text>{item['waiting'] ? 'waiting' : 'not waiting'}</Text>
-              </Card>
-            </React.Fragment>
-          }
           {this.props.error && <View style={viewStyle}><Text style={textStyleAlert}>{this.props.error}</Text></View>}
         </ScrollView>
       </View>
