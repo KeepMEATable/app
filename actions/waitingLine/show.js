@@ -5,6 +5,7 @@ import {
 } from '../../utils/dataAccess';
 import Fingerprint2 from "fingerprintjs2";
 import {ENTRYPOINT} from "../../config/entrypoint";
+import registerForPushNotificationsAsync from "../../utils/registerForPushNotificationsAsync";
 
 export function error(error) {
   return { type: 'WAITINGLINE_SHOW_ERROR', error };
@@ -31,7 +32,7 @@ export function icu(uid) {
   return { type: 'APP_IDENTIFY', uid};
 }
 
-export function init() {
+export function load() {
   return async dispatch => {
     dispatch(loading(true));
     await dispatch(authenticate(true));
@@ -39,6 +40,24 @@ export function init() {
     await dispatch(getWaitingLine());
     dispatch(loading(false));
   }
+}
+
+export function init() {
+  return async dispatch => {
+    dispatch(loading(true));
+    await dispatch(authenticate(true));
+    await dispatch(identify());
+    await dispatch(getWaitingLineOrCreate());
+    await dispatch(authorizeExpo());
+    dispatch(loading(false));
+  }
+}
+
+export function authorizeExpo() {
+ return async (dispatch, getState) => {
+     const {show: {identity, authenticated: token}} = getState().waitingLine;
+     return registerForPushNotificationsAsync(identity, token);
+ }
 }
 
 export function updateStatus(newStatus, noLoop) {
@@ -148,22 +167,47 @@ export function getWaitingLine(noLoop = false) {
         dispatch(success(retrieved));
       })
       .catch(async (e) => {
-        // post uid before retry
-        fetch(new URL('/waiting_lines', ENTRYPOINT), {
-          headers,
-          method: 'POST',
-          body: JSON.stringify({
-            customerId: identity
-          })
-        });
-
-        if (!noLoop) {
-          dispatch(logout());
-          await dispatch(authenticate(true));
-          await dispatch(getWaitingLine(true));
-        }
-
-        dispatch(error('cannot retrieve data.'));
+        // first time here :)
       });
   }
+}
+
+export function getWaitingLineOrCreate(noLoop = false) {
+    return (dispatch, getState) => {
+        let {show: {identity, authenticated}} = getState().waitingLine;
+
+        let headers = new Headers();
+        headers.set('Authorization', `Bearer ${authenticated.token}`);
+
+        return fetch(`/waiting_lines/${identity}`, {headers})
+            .then(response =>
+                response
+                    .json()
+                    .then(retrieved => ({retrieved}))
+            )
+            .then(({retrieved}) => {
+                retrieved = normalize(retrieved);
+
+                dispatch(loading(false));
+                dispatch(success(retrieved));
+            })
+            .catch(async (e) => {
+                // post uid before retry
+                fetch(new URL('/waiting_lines', ENTRYPOINT), {
+                    headers,
+                    method: 'POST',
+                    body: JSON.stringify({
+                        customerId: identity
+                    })
+                });
+
+                if (!noLoop) {
+                    dispatch(logout());
+                    await dispatch(authenticate(true));
+                    await dispatch(getWaitingLine(true));
+                }
+
+                dispatch(error('cannot retrieve data.'));
+            });
+    }
 }

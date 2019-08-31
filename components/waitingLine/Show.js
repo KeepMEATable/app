@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
+import { Notifications } from 'expo';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ScrollView, View, Text, Dimensions, Alert } from 'react-native';
 import { Card, Button } from 'react-native-elements';
 import Spinner from '../Spinner';
-import { init, updateStatus } from '../../actions/waitingLine/show';
+import { init, load, updateStatus } from '../../actions/waitingLine/show';
 
 import QRCode from 'react-native-qrcode-svg';
 import CountDown from 'react-native-countdown-component';
@@ -13,6 +14,10 @@ import Carousel from 'react-native-snap-carousel';
 const { width: viewportWidth } = Dimensions.get('window');
 
 class Show extends Component {
+  componentDidMount() {
+      this.props.load();
+      this._notificationSubscription = Notifications.addListener(this._handleNotification);
+  }
 
   init = () => {
     this.props.init();
@@ -38,6 +43,17 @@ class Show extends Component {
         {text: 'Yes, This app is delicately balanced :)', onPress: () => this.props.updateStatus('reset')}
       ]
     );
+  };
+
+  _handleNotification = (notification) => {
+      console.log(notification);
+      Alert.alert(
+          'Thank you',
+          'Hope you liked it :)',
+          [
+              {text: 'Meh.', style: 'cancel', onPress: () => this.props.updateStatus('reset')}
+          ]
+      );
   };
 
   _renderItem ({item, index}) {
@@ -144,6 +160,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = dispatch => {
   return {
     init: () => dispatch(init()),
+    load: () => dispatch(load()),
     updateStatus: (newStatus) => dispatch(updateStatus(newStatus)),
   };
 };
@@ -166,6 +183,7 @@ Show.propTypes = {
   retrieved: PropTypes.object,
   authenticated: PropTypes.object,
   init: PropTypes.func.isRequired,
+  load: PropTypes.func.isRequired,
   updateStatus: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
 };
